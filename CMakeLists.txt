@@ -21,55 +21,54 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # add the executable
-add_executable(${PROJECT_NAME} 
-    src/giftWrap.cpp
-    src/PLC.cpp
-    src/delaunay.cpp
-    src/main.cpp
-)
+# add_executable(${PROJECT_NAME} 
+#     src/giftWrap.cpp
+#     src/PLC.cpp
+#     src/delaunay.cpp
+#     src/main.cpp
+# )
+
+add_library(cdt_tetra src/delaunay.cpp src/PLC.cpp src/giftWrap.cpp)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 # optimize for speed
-	target_compile_options(${PROJECT_NAME} PUBLIC /Ot)
+	target_compile_options(cdt_tetra PRIVATE /Ot)
 # grant IEEE 754 compliance
-	target_compile_options(${PROJECT_NAME} PUBLIC "/fp:strict")
+	target_compile_options(cdt_tetra PRIVATE "/fp:strict")
 # use intrinsic functions
-	target_compile_options(${PROJECT_NAME} PUBLIC "/Oi")
+	target_compile_options(cdt_tetra PRIVATE "/Oi")
 # turn off annoying warnings
-	target_compile_options(${PROJECT_NAME} PUBLIC "/D _CRT_SECURE_NO_WARNINGS")
+	target_compile_options(cdt_tetra PRIVATE "/D _CRT_SECURE_NO_WARNINGS")
 	# set target architecture
 	if(ENABLE_AVX2)
-		target_compile_options(${PROJECT_NAME} PUBLIC "/arch:AVX2")
+		target_compile_options(cdt_tetra PRIVATE "/arch:AVX2")
 	elseif(ENABLE_SSE2)
-		target_compile_options(${PROJECT_NAME} PUBLIC "/arch:SSE2")
+		target_compile_options(cdt_tetra PRIVATE "/arch:SSE2")
 	endif()
 # reserve enough stack size
-	target_link_options(${PROJECT_NAME} PUBLIC "/STACK:8421376")
+	target_link_options(cdt_tetra PRIVATE "/STACK:8421376")
 	if(NOT LGPL)
-		target_compile_options(${PROJECT_NAME} PUBLIC "/D USE_MAROTS_METHOD")
+		target_compile_options(cdt_tetra PRIVATE "/D USE_MAROTS_METHOD")
 	endif()
 else()
 # set standard optimization level
-	target_compile_options(${PROJECT_NAME} PUBLIC -O2)
+	target_compile_options(cdt_tetra PRIVATE -O2)
 # grant IEEE 754 compliance
-	target_compile_options(${PROJECT_NAME} PUBLIC -frounding-math)
+	target_compile_options(cdt_tetra PRIVATE -frounding-math)
 	# set target architecture
 	if(ENABLE_AVX2)
-		target_compile_options(${PROJECT_NAME} PUBLIC "-mavx2")
-                target_compile_options(${PROJECT_NAME} PUBLIC "-mfma")
+		target_compile_options(cdt_tetra PRIVATE "-mavx2")
+                target_compile_options(cdt_tetra PRIVATE "-mfma")
 	elseif(ENABLE_SSE2)
-		target_compile_options(${PROJECT_NAME} PUBLIC "-msse2")
+		target_compile_options(cdt_tetra PRIVATE "-msse2")
 	endif()
 # reserve enough stack size	
-	target_compile_options(${PROJECT_NAME} PUBLIC -Wl,-z,stacksize=8421376)
+	target_compile_options(cdt_tetra PRIVATE -Wl,-z,stacksize=8421376)
 	if(NOT LGPL)
-		target_compile_options(${PROJECT_NAME} PUBLIC "-DUSE_MAROTS_METHOD")
+		target_compile_options(cdt_tetra PRIVATE "-DUSE_MAROTS_METHOD")
 	endif()
 endif()
 
 # Public include directory
-target_include_directories(${PROJECT_NAME} PUBLIC
-	src
-	include
-)
+target_include_directories(cdt_tetra PUBLIC include)
 
