@@ -423,7 +423,7 @@ public:
 
 	const explicitPoint3D& P() const { return ip; }
 	const explicitPoint3D& Q() const { return iq; }
-	const double T() const { return t; }
+	double T() const { return t; }
 
 private: // Cached values
 	interval_number dfilter_lambda_x, dfilter_lambda_y, dfilter_lambda_z, dfilter_denominator;
