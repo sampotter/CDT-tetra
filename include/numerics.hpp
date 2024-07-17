@@ -1071,13 +1071,17 @@ inline bigfloat::bigfloat(const double d) {
 	sign = (d > 0) - (d < 0);
 
 	if (sign) {
-		uint64_t dn = *((uint64_t*)(&d));
-		const uint64_t m = (dn & 0x000fffffffffffff) + 0x0010000000000000;
+		union {
+			uint64_t uint64_;
+			double double_;
+		} d_alias;
+		d_alias.double_ = d;
+		const uint64_t m = (d_alias.uint64_ & 0x000fffffffffffff) + 0x0010000000000000;
 		mantissa.push_back(m >> 32);
 		mantissa.push_back(m & 0x00000000ffffffff);
-		dn <<= 1;
-		dn >>= 53;
-		exponent = ((int32_t)dn) - 1075; // Exp
+		d_alias.uint64_ <<= 1;
+		d_alias.uint64_ >>= 53;
+		exponent = ((int32_t)d_alias.uint64_) - 1075; // Exp
 
 		pack();
 	}
@@ -1085,7 +1089,12 @@ inline bigfloat::bigfloat(const double d) {
 }
 
 inline double bigfloat::get_d() const {
-	uint64_t dn = 0;
+	union {
+		uint64_t uint64_;
+		double double_;
+	} dn_alias;
+	dn_alias.uint64_ = 0;
+
 	if (mantissa.empty()) return 0.0;
 
 	uint64_t m;
@@ -1119,11 +1128,11 @@ inline double bigfloat::get_d() const {
 	if (e < (-1022)) return 0.0;
 	if (e > 1023) return sign * INFINITY;
 
-	if (sign < 0) dn |= 0x8000000000000000; // Set sign
-	dn |= (((uint64_t)(e + 1023)) << 52); // Set exponent
-	dn |= m; // Set mantissa
+	if (sign < 0) dn_alias.uint64_ |= 0x8000000000000000; // Set sign
+	dn_alias.uint64_ |= (((uint64_t)(e + 1023)) << 52); // Set exponent
+	dn_alias.uint64_ |= m; // Set mantissa
 
-	return *((double*)(&dn));
+	return dn_alias.double_;
 }
 
 inline bigfloat bigfloat::operator+(const bigfloat& b) const {
