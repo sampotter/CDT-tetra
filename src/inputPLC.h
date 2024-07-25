@@ -23,7 +23,7 @@ public:
     vBlock(uint32_t b, uint32_t e, uint32_t d) : begin(b), end(e), dir_split(d) {}
 };
 
-void reorderVertices(double* coordinates, uint32_t numVertices, uint32_t* triVertices, uint32_t numTriangles) {
+void reorderVertices(double* coordinates, uint32_t numVertices, uint32_t* triVertices, uint32_t numTriangles, std::vector<uint32_t> *vert_perm) {
     std::vector<reVertex> revertices; 
     revertices.reserve(numVertices);
     for (uint32_t i = 0; i < numVertices; i++) revertices.push_back(reVertex(coordinates + (i * 3), i));
@@ -42,6 +42,17 @@ void reorderVertices(double* coordinates, uint32_t numVertices, uint32_t* triVer
             blocks.push_back(vBlock(block.begin, block_mid, (dir_split + 1) % 3));
             blocks.push_back(vBlock(block_mid, block.end, (dir_split + 1) % 3));
         }
+    }
+
+    /* Pull out the permutation giving the new locations of the input
+     * PLC's vertices before they have been rearranged (i.e., vert_perm[i]
+     * is the position of the ith vertex in the unmodified PLC's vertex
+     * array in the reordered vertex array). */
+    if (vert_perm != nullptr) {
+      if (!vert_perm->empty())
+	throw std::runtime_error("vert_perm should be empty");
+      vert_perm->reserve(numVertices);
+      for (const auto& revertex: revertices) vert_perm->push_back(revertex.index);
     }
 
     std::vector<uint32_t> new_index(numVertices);
@@ -265,7 +276,7 @@ public:
         if (npts == 0) ip_error("Input file has no vertices\n");
         if (ntri == 0) ip_error("Input file has no triangles\n");
 
-        postProcess(vertex_p, npts, tri_vertices_p, ntri, verbose);
+        postProcess(vertex_p, npts, tri_vertices_p, ntri, verbose, nullptr);
 
         free(vertex_p);
         free(tri_vertices_p);
@@ -281,7 +292,7 @@ public:
         return true;
     }
 
-    void postProcess(double* vertices_p, uint32_t npts, uint32_t* tri_vertices_p, uint32_t ntri, bool verbose) {
+    void postProcess(double* vertices_p, uint32_t npts, uint32_t* tri_vertices_p, uint32_t ntri, bool verbose, std::vector<uint32_t>* vert_perm = nullptr) {
         // Convert OFF to valid set of vertices (no duplications) and constraints (no degeneracies)
         uint32_t* valid_tri_vertices_p;
         uint32_t num_valid_tris;
@@ -304,7 +315,7 @@ public:
         free(tmp_vertices);
         free(valid_tri_vertices_p);
 
-        reorderVertices(coordinates.data(), (uint32_t)coordinates.size() / 3, triangle_vertices.data(), (uint32_t)triangle_vertices.size() / 3);
+        reorderVertices(coordinates.data(), (uint32_t)coordinates.size() / 3, triangle_vertices.data(), (uint32_t)triangle_vertices.size() / 3, vert_perm);
     }
 
     // Add eight vertices to enclose the input in a box
